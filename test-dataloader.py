@@ -16,7 +16,7 @@ class Dataset(torch.utils.data.Dataset):
     
         #'Initialization'
         self.img_dir = img_dir
-        files = glob.glob(img_dir + '/**/*.tiff', recursive=True)
+        self.files = glob.glob(img_dir + '/**/*.tiff', recursive=True)
      
     def __len__(self):
         # 'Denotes the total number of samples'
@@ -24,9 +24,7 @@ class Dataset(torch.utils.data.Dataset):
         
     def __getitem__(self, index):
         # Select sample
-        img_path = os.path.join(self.img_dir, self.files[index])
-
-        image_np = imread(img_path)
+        image_np = imread(self.files[index])
 
         #Transform
         image_np = image_np.astype(float)
@@ -34,18 +32,9 @@ class Dataset(torch.utils.data.Dataset):
         image_np = image_np[:,:,0]
 
         # Center crop
-        image = torch.from_numpy(image_np).permute(2, 0, 1)
+        image = torch.from_numpy(image_np)
         transform = transforms.CenterCrop(0)
         image = transform(image)
-        image = image.permute(1, 2, 0)
-        image_np = image.detach().cpu().numpy()
-
-        #Normalize
-        image_np = utils.normalize_numpy_0_to_1(image_np)
-
-        image = torch.from_numpy(image_np).float().permute(2, 0, 1)
-        if self.transform is not None:
-            image = self.transform(image)
 
         return image, index
 
