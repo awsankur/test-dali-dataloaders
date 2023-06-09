@@ -41,8 +41,8 @@ class Dataset(torch.utils.data.Dataset):
 img_dir = './data/DeepPhenotype_PBMC_ImageSet_YSeverin/Training/'
 train_dataset = Dataset(img_dir)
 
-num_workers = 2
-train_loader = DataLoader(train_dataset,shuffle=True,num_workers=num_workers,batch_size=30,pin_memory=True)
+num_workers = 32
+train_loader = DataLoader(train_dataset,shuffle=True,num_workers=num_workers,batch_size=96,pin_memory=True)
 start = time.time()
 for epoch in range(1, 3):
     for i, data in enumerate(train_loader, 0):
