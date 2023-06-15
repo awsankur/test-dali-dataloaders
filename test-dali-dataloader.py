@@ -11,7 +11,7 @@ import multiprocessing as mp
 
 
 IMG_DIR = './data/DeepPhenotype_PBMC_ImageSet_YSeverin/Training/'
-#TRAIN_BS = 30
+TRAIN_BS = 30
 #NUM_WORKERS = 0
 #NUM_IMAGES = 10591
 #89572
@@ -25,7 +25,7 @@ class MultichannelPipeline(Pipeline):
         super(MultichannelPipeline, self).__init__(batch_size, num_threads, device_id)
         self.device = device
 
-        self.reader = ops.readers.File(files=multichannel_tiff_files)
+        self.reader = ops.readers.File(files=multichannel_tiff_files, name="Reader")
 
         decoder_device = 'mixed' if self.device == 'gpu' else 'cpu'
         self.decoder = ops.decoders.Image(device=decoder_device, output_type=types.ANY_DATA)
@@ -49,14 +49,14 @@ class MultichannelPipeline(Pipeline):
                                            dtype=types.FLOAT)
 
     def define_graph(self):
-        encoded_data, _ = self.reader()
+        encoded_data, label = self.reader()
         decoded_data = self.decoder(encoded_data)
         out = decoded_data.gpu() if self.device == 'gpu' else decoded_data
         out = self.resize(out)
         out = self.crop(out)
         out = self.transpose(out)
         out = self.cmn(out)
-        return out
+        return out, label
 
     def iter_setup(self):
         data = self.iterator.next()
@@ -67,32 +67,37 @@ class MultichannelPipeline(Pipeline):
 
 
 
-@pipeline_def
-def simple_pipeline():
-    pngs, labels= fn.readers.file(file_root=IMG_DIR,
-                                    random_shuffle=True,
-                                    name="Reader")
-    images = fn.decoders.image(pngs)
+#@pipeline_def
+#def simple_pipeline():
+#    pngs, labels= fn.readers.file(file_root=IMG_DIR,
+#                                    random_shuffle=True,
+#                                    name="Reader")
+#    images = fn.decoders.image(pngs)
 
-    return images, labels
+#    return images, labels
 
-pipe = simple_pipeline(batch_size=TRAIN_BS, num_threads=1, device_id=0)
+#pipe = simple_pipeline(batch_size=TRAIN_BS, num_threads=1, device_id=0)
+
+pipe = MultichannelPipeline(device = 'gpu', batch_size=TRAIN_BS, num_threads=1, device_id=0)
 pipe.build()
 
-images, labels = pipe.run()
+print('Pipeline Built')
 
-import pdb;pdb.set_trace()
-
-train_loader = DALIClassificationIterator([pipe], reader_name='Reader')
+#images, labels = pipe.run()
 
 
 
-start = time.time()
-for epoch in range(1, 3):
-    for i, data in enumerate(train_loader, 0):
-        pass
-end = time.time()
-print("DALI Finish with:{} second, num_workers={}".format(end - start, NUM_WORKERS))
+train_loader = DALIGenericIterator([pipe], reader_name='Reader')
+
+print('Dataloader Built')
+
+
+#start = time.time()
+#for epoch in range(1, 3):
+#    for i, data in enumerate(train_loader, 0):
+#        pass
+#end = time.time()
+#print("DALI Finish with:{} second, num_workers={}".format(end - start, NUM_WORKERS))
 
 
 
