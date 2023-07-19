@@ -28,21 +28,25 @@ class Dataset(torch.utils.data.Dataset):
 
         #Transform
         image_np = image_np.astype(float)
-        # 50x50 5 channel image. Selecting channel 0
-        image_np = image_np[:,:,0]
-
-        # Center crop
         image = torch.from_numpy(image_np)
-        transform = transforms.CenterCrop(0)
-        image = transform(image)
+        # 50x50 5 channel image. Selecting channel 0
+        #image_np = image_np[:,:,0]
+
+        #transform = transforms.Compose([
+        #        transforms.Resize(size=(220,224)),
+        #        transforms.CenterCrop(0)
+        #        ])
+
+        
+        #image = transform(image)
 
         return image, index
 
-img_dir = './data/DeepPhenotype_PBMC_ImageSet_YSeverin/Training/'
+img_dir = './data/data/DeepPhenotype_PBMC_ImageSet_YSeverin/Training/'
 train_dataset = Dataset(img_dir)
 
-num_workers = 32
-train_loader = DataLoader(train_dataset,shuffle=True,num_workers=num_workers,batch_size=96,pin_memory=True)
+num_workers = 0
+train_loader = DataLoader(train_dataset,shuffle=True,num_workers=num_workers,batch_size=30,pin_memory=True)
 start = time.time()
 for epoch in range(1, 3):
     for i, data in enumerate(train_loader, 0):

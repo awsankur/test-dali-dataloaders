@@ -1,16 +1,19 @@
 import os
 import time
-import torch
-from nvidia.dali.pipeline import Pipeline
-import nvidia.dali.ops as ops
-from nvidia.dali.plugin.pytorch import DALIGenericIterator
+from nvidia.dali.pipeline import pipeline_def
 import nvidia.dali.types as types
+import nvidia.dali.fn as fn
+from nvidia.dali.plugin.pytorch import DALIGenericIterator
+
+
+
+#import nvidia.dali.ops as ops
 import numpy as np
 import glob
 import multiprocessing as mp
 
 
-IMG_DIR = './data/DeepPhenotype_PBMC_ImageSet_YSeverin/Training/'
+IMG_DIR = './data/data/DeepPhenotype_PBMC_ImageSet_YSeverin/Training/'
 TRAIN_BS = 30
 #NUM_WORKERS = 0
 #NUM_IMAGES = 10591
@@ -18,86 +21,33 @@ TRAIN_BS = 30
 
 multichannel_tiff_files = glob.glob(IMG_DIR + '/**/*.tiff', recursive=True)
 
+#import pdb;pdb.set_trace()
 
 # From https://github.com/NVIDIA/DALI/blob/main/dali/test/python/test_pipeline_multichannel.py
-class MultichannelPipeline(Pipeline):
-    def __init__(self, device, batch_size, num_threads=1, device_id=0):
-        super(MultichannelPipeline, self).__init__(batch_size, num_threads, device_id)
-        self.device = device
+@pipeline_def(num_threads=4, device_id=0)
+def get_dali_pipeline():
 
-        self.reader = ops.readers.File(files=multichannel_tiff_files, name="Reader")
+    encoded, label = fn.readers.file(files=multichannel_tiff_files, name="Reader")
+    decoded = fn.experimental.decoders.image(encoded, device="mixed", output_type=types.ANY_DATA)
 
-        decoder_device = 'mixed' if self.device == 'gpu' else 'cpu'
-        self.decoder = ops.decoders.Image(device=decoder_device, output_type=types.ANY_DATA)
+    images = decoded.gpu()
+    images = fn.resize(images,resize_y=900, resize_x=300)
+    images = fn.crop(images,crop_h=220, crop_w=224,crop_pos_x=0.3, crop_pos_y=0.2)
+    #images = fn.transpose(images,perm=(1, 0, 2),transpose_layout=False)
+    #images = fn.crop_mirror_normalize(images,std=255., mean=0.,output_layout="HWC",dtype=types.FLOAT)
 
-        self.resize = ops.Resize(device=self.device,
-                                 resize_y=900, resize_x=300,
-                                 min_filter=types.DALIInterpType.INTERP_LINEAR,
-                                 antialias=False)
+    return images, label
 
-        self.crop = ops.Crop(device=self.device,
-                             crop_h=220, crop_w=224,
-                             crop_pos_x=0.3, crop_pos_y=0.2)
+train_loader = DALIGenericIterator(
+    [get_dali_pipeline(batch_size=TRAIN_BS)],
+    ['data', 'label'],
+    reader_name='Reader'
+)
 
-        self.transpose = ops.Transpose(device=self.device,
-                                       perm=(1, 0, 2),
-                                       transpose_layout=False)
-
-        self.cmn = ops.CropMirrorNormalize(device=self.device,
-                                           std=255., mean=0.,
-                                           output_layout="HWC",
-                                           dtype=types.FLOAT)
-
-    def define_graph(self):
-        encoded_data, label = self.reader()
-        decoded_data = self.decoder(encoded_data)
-        out = decoded_data.gpu() if self.device == 'gpu' else decoded_data
-        out = self.resize(out)
-        out = self.crop(out)
-        out = self.transpose(out)
-        out = self.cmn(out)
-        return out, label
-
-    def iter_setup(self):
-        data = self.iterator.next()
-        self.feed_input(self.data, data, layout=self.layout)
-
-
-
-
-
-
-#@pipeline_def
-#def simple_pipeline():
-#    pngs, labels= fn.readers.file(file_root=IMG_DIR,
-#                                    random_shuffle=True,
-#                                    name="Reader")
-#    images = fn.decoders.image(pngs)
-
-#    return images, labels
-
-#pipe = simple_pipeline(batch_size=TRAIN_BS, num_threads=1, device_id=0)
-
-pipe = MultichannelPipeline(device = 'gpu', batch_size=TRAIN_BS, num_threads=1, device_id=0)
-pipe.build()
-
-print('Pipeline Built')
-
-#images, labels = pipe.run()
-
-
-
-train_loader = DALIGenericIterator([pipe], reader_name='Reader')
-
-print('Dataloader Built')
-
-
-#start = time.time()
-#for epoch in range(1, 3):
-#    for i, data in enumerate(train_loader, 0):
-#        pass
-#end = time.time()
-#print("DALI Finish with:{} second, num_workers={}".format(end - start, NUM_WORKERS))
-
-
+start = time.time()
+for epoch in range(1, 3):
+    for i, data in enumerate(train_loader, 0):
+        pass
+    end = time.time()
+print("Finish with:{} second".format(end - start))
 
