@@ -26,9 +26,10 @@ class Dataset(torch.utils.data.Dataset):
         # Select sample
         image_np = imread(self.files[index])
 
-        #Transform
+        #Return a Torch tensor
         image_np = image_np.astype(float)
         image = torch.from_numpy(image_np)
+
         # 50x50 5 channel image. Selecting channel 0
         #image_np = image_np[:,:,0]
 
@@ -45,13 +46,24 @@ class Dataset(torch.utils.data.Dataset):
 img_dir = './data/data/DeepPhenotype_PBMC_ImageSet_YSeverin/Training/'
 train_dataset = Dataset(img_dir)
 
-num_workers = 0
-train_loader = DataLoader(train_dataset,shuffle=True,num_workers=num_workers,batch_size=30,pin_memory=True)
-start = time.time()
-for epoch in range(1, 3):
-    for i, data in enumerate(train_loader, 0):
-        pass
+number_of_cpus = mp.cpu_count()
+number_of_gpus = torch.cuda.device_count()
+
+max_num_workers = int(number_of_cpus/number_of_gpus)
+
+print('Max num workers = {}'.format(max_num_workers))
+
+num_epochs = 3
+for num_workers in range(0,max_num_workers+2,2):
+    train_loader = DataLoader(train_dataset,shuffle=True,num_workers=num_workers,batch_size=32,pin_memory=True)
+    start = time.time()
+
+    for epoch in range(num_epochs):
+        for i, data in enumerate(train_loader, 0):
+            pass
     end = time.time()
-print("Finish with:{} second, num_workers={}".format(end - start, num_workers))
+    time_taken_secs = end - start
+    avg_time_per_epoch_secs = time_taken_secs/num_epochs 
+    print("Avg time per epoch:{} second, num_workers={}".format(avg_time_per_epoch_secs, num_workers))
 
 
