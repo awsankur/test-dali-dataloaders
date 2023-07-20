@@ -28,22 +28,19 @@ class Dataset(torch.utils.data.Dataset):
 
         #Return a Torch tensor
         image_np = image_np.astype(float)
-        image = torch.from_numpy(image_np)
+        image_np = torch.from_numpy(image_np).permute(2, 0, 1)
 
-        # 50x50 5 channel image. Selecting channel 0
-        #image_np = image_np[:,:,0]
-
-        #transform = transforms.Compose([
-        #        transforms.Resize(size=(220,224)),
-        #        transforms.CenterCrop(0)
-        #        ])
+        transform = transforms.Compose([
+                transforms.Resize(size=(220,224)),
+                transforms.CenterCrop(220)
+                ])
 
         
-        #image = transform(image)
+        image = transform(image_np)
 
         return image, index
 
-img_dir = './data/data/DeepPhenotype_PBMC_ImageSet_YSeverin/Training/'
+img_dir = '/data/data/DeepPhenotype_PBMC_ImageSet_YSeverin/Training/'
 train_dataset = Dataset(img_dir)
 
 number_of_cpus = mp.cpu_count()
