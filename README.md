@@ -8,13 +8,13 @@ We will use a deep phenotyping multi-channel cell images open sourced [here](htt
 The latest version of DALI is included in the latest PyTorch [NGC container](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/pytorch). In this work we use an image built from `nvcr.io/nvidia/pytorch:23.06-py3`.
 
 ## Configuration
-Instance: p3.8xlarge
-GPU: Tesla V-100
-AMI: Deep Learning AMI GPU PyTorch 2.0.1 (Amazon Linux 2) 20230627
-PyTorch Version: 2.01
-Cuda Version: 12.1
-Nvidia Driver Version: 525.85.12
-Python Version: 3.10.6
+1. Instance: p3.8xlarge
+2. GPU: Tesla V-100
+3. AMI: Deep Learning AMI GPU PyTorch 2.0.1 (Amazon Linux 2) 20230627
+4. PyTorch Version: 2.01
+5. Cuda Version: 12.1
+6. Nvidia Driver Version: 525.85.12
+7. Python Version: 3.10.6
 
 ## Steps to Reproduce Result
 1. Edit [docker.properties](https://github.com/awsankur/test-dali-dataloaders/blob/main/multi-channel-images/docker/docker.properties) to use a different BASE image or change docker image or container names.
