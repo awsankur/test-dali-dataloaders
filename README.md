@@ -1,5 +1,5 @@
-# test-dali-dataloaders
-Benchmark DALI dataloader speedups
+# Accelerate Distributed Training of PyTorch Deep Learning Models with Nvidia DALI dataloaders
+In this repo, we will show some results benchmarking data loading and pre-processing speedups obtained with Dataloaders created with [NVIDIA DALI](https://developer.nvidia.com/dali)
 
 ## PyTorch DataLoader
 `train_loader = DataLoader(train_dataset,shuffle=True,num_workers=0,batch_size=30,pin_memory=True)`
