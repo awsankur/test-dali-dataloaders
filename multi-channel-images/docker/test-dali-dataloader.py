@@ -5,9 +5,6 @@ import nvidia.dali.types as types
 import nvidia.dali.fn as fn
 from nvidia.dali.plugin.pytorch import DALIGenericIterator
 
-
-
-#import nvidia.dali.ops as ops
 import numpy as np
 import glob
 import multiprocessing as mp

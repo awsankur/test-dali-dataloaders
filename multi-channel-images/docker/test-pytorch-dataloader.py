@@ -5,7 +5,6 @@ import torch
 from torchvision import transforms
 from torch.utils.data import DataLoader
 from tifffile import imread
-import utils
 
 import multiprocessing as mp
 
